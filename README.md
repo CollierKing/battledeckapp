@@ -1,6 +1,6 @@
 # BattleDeck.app
 
-<img src="https://github.com/CollierKing/battledeckapp/blob/main/public/website_banner_light.png" alt="alt text" style="max-width: 100%;">
+<img src="https://github.com/CollierKing/battledeckapp/blob/main/public/website_banner_dark.png" alt="BattleDeck.app Banner" style="max-width: 100%;">
 
 A sample NextJS App that uses the [Cloudflare Develper Platform](https://developers.cloudflare.com/learning-paths/workers/devplat/intro-to-devplat/), made for the [Austin JavaScript Meetup](https://austinjavascript.com/).
 
