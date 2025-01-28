@@ -79,7 +79,7 @@ export default async function Home() {
             </TrackableLink>
             <Link
               className="text-center w-48 border p-2 rounded-lg flex items-center justify-center bg-transparent text-primary dark:text-white hover:bg-secondary dark:hover:bg-gray-900"
-              href="https://huijing.github.io/ppt-karaoke/"
+              href="https://github.com/CollierKing/battledeckapp"
               target="_blank"
               rel="noopener noreferrer"
             >
