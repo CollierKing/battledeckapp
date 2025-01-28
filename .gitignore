@@ -46,3 +46,4 @@ meta/
 *.DS_Store
 
 battledeck_images/
+!.env.sample
