@@ -1,0 +1,28 @@
+name = "workflows-battledecks"
+main = "src/index.ts"
+compatibility_date = "2024-10-22"
+
+[observability]
+enabled = true
+head_sampling_rate = 1 # optional. default = 1.  
+
+# <docs-tag name="workflows-binding-wrangler.toml">  
+[[workflows]]
+# name of your workflow  
+name = "workflows-battledecks"
+# binding name env.MYWORKFLOW  
+binding = "BD_WORKFLOW"
+# this is class that extends the Workflow class in src/index.ts  
+class_name = "BattleDecksWorkflow"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "battledecks"
+database_id = "f1211372-acec-44e5-87fc-f38485548eec"
+
+[ai]
+binding = "AI"
+
+[[r2_buckets]]
+binding = 'R2'
+bucket_name = 'battledecks'

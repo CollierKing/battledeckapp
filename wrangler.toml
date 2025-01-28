@@ -1,0 +1,32 @@
+# wrangler.toml
+
+#:schema node_modules/wrangler/config-schema.json
+name = "battledeckapp"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = ".vercel/output/static"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "battledecks"
+database_id = "f1211372-acec-44e5-87fc-f38485548eec"
+migrations_dir = "migrations"
+
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "battledecks"
+
+[ai]
+binding = "AI"
+
+[[kv_namespaces]]
+binding = "KV"
+id = "9e778708bca547fb93497f7dc56a566b"
+
+[[services]]
+binding = "BD_WORKFLOW"
+service = "workflows-battledecks"
+
+[[analytics_engine_datasets]]
+binding = "ANALYTICS"
+dataset = "battledecks"
