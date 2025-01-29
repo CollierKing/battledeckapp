@@ -103,14 +103,21 @@ const CarouselView = <T extends Slide>({
           <CarouselItem key={item.id}>
             <Card>
               <CardContent className="p-0">
-                <div className="relative h-2/3">
+                <div className="relative h-[600px] w-full">
                   {item.image_url ? (
                     <Image
                       src={item.image_url}
                       alt={item.id.toString()}
-                      width={400}
-                      height={400}
-                      className="min-h-[600px] min-w-[200px] h-full object-cover"
+                      sizes="(max-width: 320px) 100vw,
+                    (max-width: 480px) 90vw,
+                    (max-width: 640px) 80vw,
+                    (max-width: 768px) 70vw,
+                    (max-width: 1024px) 60vw,
+                    (max-width: 1100px) 50vw,
+                    (max-width: 1200px) 40vw,
+                    10vw"
+                      fill={true}
+                      className="object-cover"
                     />
                   ) : (
                     <div className="min-h-[600px] min-w-[200px] h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">

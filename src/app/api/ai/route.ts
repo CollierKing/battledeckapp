@@ -107,7 +107,6 @@ export async function POST(request: Request) {
         }
 
         const result = await env.AI.run(
-          // @ts-expect-error WorkersAI model name
           "@cf/meta/llama-3.2-11b-vision-instruct",
           {
             prompt: CAPTION_PROMPT,
