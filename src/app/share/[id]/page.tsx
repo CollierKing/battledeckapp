@@ -30,7 +30,7 @@ export default function ShareDeck() {
   const [viewType, setViewType] = useState<"grid" | "carousel">("grid");
   const [slides, setSlides] = useState<Slide[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-
+  const [deckId, setDeckId] = useState<string>("");
   const [search, setSearch] = useState<string>("");
   const [filteredSlides, setFilteredSlides] = useState<Slide[]>([]);
 
@@ -78,6 +78,7 @@ export default function ShareDeck() {
 
     if (params.id) {
       const deckId = Array.isArray(params.id) ? params.id[0] : params.id;
+      setDeckId(deckId);
       handleGetSlides(deckId);
     }
   }, [params, searchParams]);
@@ -177,6 +178,7 @@ export default function ShareDeck() {
 
           <PresentationView
             slides={slides}
+            deckId={deckId}
             isOpen={presentationMode}
             onClose={() => setPresentationMode(false)}
           />

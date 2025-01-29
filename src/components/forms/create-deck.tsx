@@ -59,7 +59,7 @@ import { createDeckSchema } from "@/schemas/deck";
 
 // MARK: - Constants
 const DEFAULT_SLIDE_COUNT = 10;
-const MAX_SLIDE_COUNT = 10;
+const MAX_SLIDE_COUNT = 20;
 const DEFAULT_AI_PROMPT = `
     Create a deck of <SLIDE_COUNT> slides for a presentation about the history of the internet.
     Each slide should describe an image relating to a topic or concept from the history of the internet,

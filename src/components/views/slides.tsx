@@ -316,6 +316,7 @@ export default function Slides({
 
       <PresentationView
         slides={slides}
+        deckId={deckId}
         isOpen={presentationMode}
         onClose={() => setPresentationMode(false)}
       />
