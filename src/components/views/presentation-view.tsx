@@ -101,22 +101,15 @@ export function PresentationView({
 
           <div className="relative w-full h-full flex items-center justify-center">
             <div className="w-full h-full max-h-[75vw] max-w-[calc(100vh*4/3)] relative">
-              {currentSlideData.id === "intro-slide" || currentSlideData.id === "closing-slide" ? (
-                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/10 to-secondary/10">
-                  <h1 className="text-6xl font-bold text-primary">
-                    {currentSlideData.caption}
-                  </h1>
-                </div>
-              ) : (
-                <div className="relative w-full h-full">
-                  <Image
-                    src={currentSlideData.image_url}
-                    alt={currentSlideData.caption || "Slide"}
-                    fill
-                    className="object-contain z-10"
-                  />
-                </div>
-              )}
+              <div className="relative w-full h-full">
+                <Image
+                  src={currentSlideData.image_url}
+                  alt={currentSlideData.caption || "Slide"}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 75vw"
+                  className="object-contain z-10"
+                />
+              </div>
               {currentSlideData.caption && showCaptions && (
                 <div className="absolute bottom-0 w-full bg-black/50 p-4 text-white z-20">
                   <p className="text-center">{currentSlideData.caption}</p>

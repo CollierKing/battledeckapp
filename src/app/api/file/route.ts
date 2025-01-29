@@ -7,10 +7,18 @@ import { auth } from "@/auth";
 
 export const runtime = "edge";
 
-
 interface ResponseData {
   deck_id: string;
   workflow_id?: string;
+}
+
+interface FileMetadata {
+  file_name: string;
+  id: string;
+  type: string;
+  caption?: string;
+  r2_file_name?: string;
+  deck_order?: number;
 }
 
 const {
@@ -37,7 +45,7 @@ export async function POST(request: Request) {
     const { env } = getRequestContext();
     // Get the form data
     const formData = await request.formData();
-    
+
     // Get and parse the metadata (last entry)
     const metadataStr = formData.get("metadata");
     if (!metadataStr || typeof metadataStr !== "string") {
@@ -45,17 +53,10 @@ export async function POST(request: Request) {
     }
     const metadata = JSON.parse(metadataStr) as {
       action: string;
-      // deck_id: string;
       name: string;
       type: string;
       aiPrompt: string;
-      fileMetadata: Array<{
-        file_name: string;
-        id: string;
-        type: string;
-        caption?: string;
-        r2_file_name?: string;
-      }>;
+      fileMetadata: FileMetadata[];
       generateCaptions: boolean;
       aiSlidePrompts: string[];
       addSlideDeckId: string;
@@ -64,6 +65,8 @@ export async function POST(request: Request) {
     const resData: ResponseData = {
       deck_id: "",
     };
+
+    const SLIDE_CHUNK_SIZE = 10;
 
     switch (metadata.action) {
       case "create_deck":
@@ -95,18 +98,28 @@ export async function POST(request: Request) {
 
           // Insert slides
           if (metadata.aiSlidePrompts && metadata.aiSlidePrompts.length > 0) {
-            await db.insert(slidesTable).values(
-              metadata.aiSlidePrompts.map((slidePrompt, index) => ({
-                id: uuidv6(),
-                deck_id: deck_id,
-                deck_order: index,
-                caption: slidePrompt,
-                image_url: null,
-                wf_status: "pending",
-                createdAt: new Date(),
-                updatedAt: new Date(),
-              }))
+            // Maximum bound parameters per query is 100.
+            // https://developers.cloudflare.com/d1/platform/limits/
+
+            const slideChunks = chunkArray(
+              metadata.aiSlidePrompts,
+              SLIDE_CHUNK_SIZE
             );
+
+            for (const chunk of slideChunks) {
+              await db.insert(slidesTable).values(
+                chunk.map((slidePrompt, index) => ({
+                  id: uuidv6(),
+                  deck_id: deck_id,
+                  deck_order: index,
+                  caption: slidePrompt,
+                  image_url: null,
+                  wf_status: "pending",
+                  createdAt: new Date(),
+                  updatedAt: new Date(),
+                }))
+              );
+            }
           }
         } else {
           // MARK: - Human Deck
@@ -120,10 +133,13 @@ export async function POST(request: Request) {
           }
 
           // create the filenames for R2
-          metadata.fileMetadata = metadata.fileMetadata.map((fileInfo) => ({
-            ...fileInfo,
-            r2_file_name: `${fileInfo.id}${getFileExtension(fileInfo.type)}`,
-          }));
+          metadata.fileMetadata = metadata.fileMetadata.map(
+            (fileInfo, idx) => ({
+              ...fileInfo,
+              deck_order: idx,
+              r2_file_name: `${fileInfo.id}${getFileExtension(fileInfo.type)}`,
+            })
+          );
 
           // Cloudflare Pages can only perform 5 async requests at a time
           // Split files into chunks of 5
@@ -143,12 +159,11 @@ export async function POST(request: Request) {
                   fileChunksMetadata[chunkIndex][idx].r2_file_name;
 
                 return env.R2.put(fileName, buffer, {
-                    httpMetadata: { contentType: file.type },
-                  })
-                  .catch((error) => {
-                    console.error(`Failed to upload file ${file.name}:`, error);
-                    throw error;
-                  });
+                  httpMetadata: { contentType: file.type },
+                }).catch((error) => {
+                  console.error(`Failed to upload file ${file.name}:`, error);
+                  throw error;
+                });
               })
             );
           }
@@ -168,21 +183,28 @@ export async function POST(request: Request) {
             });
           }
 
-          // Insert slides
-          if (metadata.fileMetadata && metadata.fileMetadata.length > 0) {
-            await db.insert(slidesTable).values(
-              metadata.fileMetadata.map((fileInfo, index) => ({
-                id: fileInfo.id,
-                deck_id: deck_id,
-                deck_order: index,
-                caption: fileInfo.caption || "",
-                image_url: `${CF_STORAGE_DOMAIN}/${fileInfo.r2_file_name}`,
-                wf_status: "pending",
-                createdAt: new Date(),
-                updatedAt: new Date(),
-              }))
-            );
-          }
+          const slideBatches = chunkArray(
+            metadata.fileMetadata,
+            SLIDE_CHUNK_SIZE
+          );
+
+          // Insert all batches in parallel
+          await Promise.all(
+            slideBatches.map((batch) =>
+              db.insert(slidesTable).values(
+                batch.map((fileInfo) => ({
+                  id: fileInfo.id,
+                  deck_id: deck_id,
+                  deck_order: fileInfo.deck_order,
+                  caption: fileInfo.caption || "",
+                  image_url: `${CF_STORAGE_DOMAIN}/${fileInfo.r2_file_name}`,
+                  wf_status: "pending",
+                  createdAt: new Date(),
+                  updatedAt: new Date(),
+                }))
+              )
+            )
+          );
         }
 
         // MARK: - Invoke Workflow
@@ -211,7 +233,7 @@ export async function POST(request: Request) {
               deck_id: deck_id,
               deck_type: metadata.type,
             });
-            
+
             const data = await res.json();
             resData.workflow_id = data.id;
           } catch (error) {
