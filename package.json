@@ -11,7 +11,7 @@
     "build": "next build",
     "setup:dev": "cp .env.development .env && cp .env.development .env.production.local && cp wrangler.toml.development wrangler.toml",
     "setup:prod": "cp .env.production .env && cp .env.production .env.production.local && cp wrangler.toml.production wrangler.toml",
-    "dev": " next dev",
+    "dev": "next dev",
     "pages:build": "next build && npx @cloudflare/next-on-pages",
     "pages:dev": "npx wrangler pages dev .vercel/output/static --compatibility-flag=nodejs_compat",
     "pages:deploy": "npm run pages:build && wrangler pages deploy .vercel/output/static",
