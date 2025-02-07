@@ -23,9 +23,9 @@ binding = "AI"
 binding = "KV"
 id = "9e778708bca547fb93497f7dc56a566b"
 
-[[services]]
-binding = "BD_WORKFLOW"
-service = "workflows-battledecks"
+# [[services]]
+# binding = "BD_WORKFLOW"
+# service = "workflows-battledecks"
 
 [[analytics_engine_datasets]]
 binding = "ANALYTICS"

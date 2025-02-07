@@ -1,26 +1,29 @@
+import type { HTTPAIGatewayParams, HTTPAIParams } from "./ai";
+import { WorkflowParams } from "./workflow";
+
 // Define interfaces for mock services that mirror Cloudflare's types
 export interface MockAi {
-  run: (prompt: string) => Promise<string>;
+  run(
+    model: string,
+    params: HTTPAIParams,
+    gatewayParams: HTTPAIGatewayParams
+  ): Promise<Response>;
 }
 
-// export interface MockD1Database {
-//   prepare(query: string): Promise<D1PreparedStatement>;
-//   batch<T = unknown>(statements: D1PreparedStatement[]): Promise<D1Result<T>[]>;
-//   exec(query: string): Promise<D1Result<unknown>>;
-//   run(query: string, values?: unknown[]): Promise<D1Result<unknown>>;
-//   all<T = unknown>(query: string, values?: unknown[]): Promise<T[]>;
-//   first<T = unknown>(query: string, values?: unknown[]): Promise<T | null>;
-// }
+export interface MockD1Database {
+  query: (query: string) => Promise<any>;
+  insert: (query: string) => Promise<any>;
+  delete: (query: string) => Promise<any>;
+}
 
 export interface MockR2Bucket {
-  put: (key: string, value: any) => Promise<void>;
+  put: (key: string, value: any, httpMetadata: any) => Promise<void>;
   get: (key: string) => Promise<any>;
   // Add other R2 methods as needed
 }
 
 export interface MockService {
-  fetch: (request: Request) => Promise<Response>;
-  // TODO: add workflow method
+  workflow(workflowParams: WorkflowParams): Promise<Response>;
 }
 
 export interface MockKVNamespace {
@@ -36,8 +39,8 @@ export interface MockAnalyticsDataset {
 // Extend the global CloudflareEnv to work with both real and mock services
 declare global {
   interface CloudflareEnv {
-    AI: Ai | MockAi;
-    DB: D1Database;
+    // AI: Ai | MockAi;
+    // DB: D1Database | MockD1Database;
     R2: R2Bucket | MockR2Bucket;
     BD_WORKFLOW: Service | MockService;
     KV: KVNamespace | MockKVNamespace;

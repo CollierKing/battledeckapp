@@ -9,13 +9,8 @@ export default DB_LOCAL_PATH
       out: "./migrations",
       dialect: "sqlite",
       dbCredentials: {
-        accountId: CF_ACCOUNT_ID!,
-        token: CF_USER_API_TOKEN!,
-        databaseId: DB_PROD_DATABASE_ID!,
+        url: DB_LOCAL_PATH,
       },
-      // dbCredentials: {
-      //   url: DB_LOCAL_PATH,
-      // },
     })
   : defineConfig({
       schema: "./src/server/db/schema.ts",
