@@ -30,6 +30,8 @@ export async function* streamingFetch(
 
   for (;;) {
     const { done, value } = await reader.read();
+    console.log("streamingFetch.value", value);
+    console.log("streamingFetch.done", done);
     if (done) break;
 
     try {

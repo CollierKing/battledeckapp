@@ -1,4 +1,4 @@
-import { getRequestContext } from "@cloudflare/next-on-pages";
+import { getEnvContext } from "@/lib/getEnvContext";
 import { Slide } from "@/types/slides";
 import { auth } from "@/auth";
 
@@ -15,7 +15,9 @@ export async function POST(request: Request) {
     return new Response(null, { status: 404 });
   }
 
-  const { env } = getRequestContext();
+  const { env } = getEnvContext();
+
+  // console.log("env", env);
 
   const body = (await request.json()) as RequestBody;
 

@@ -1,8 +1,14 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+// @ts-nocheck
 import {
   CAPTION_PROMPT,
+  GATEWAY,
+  IMAGE_MODEL,
   IMAGE_PROMPT,
+  TEXT_MODEL,
+  VISION_MODEL,
 } from "@/server/workflows/ai-workflow/src/constants";
-import { getRequestContext } from "@cloudflare/next-on-pages";
+import { getEnvContext } from "@/lib/getEnvContext";
 import { auth } from "@/auth";
 
 export const runtime = "edge";
@@ -31,7 +37,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { env } = getRequestContext();
+    const { env } = getEnvContext();
     const contentType = request.headers.get("content-type") || "";
     let body: RequestBody;
     let uint8Array;
@@ -74,8 +80,7 @@ export async function POST(request: Request) {
                 `;
 
         const result = await env.AI.run(
-          "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
-          // "@cf/meta/llama-3.1-70b-instruct",
+          TEXT_MODEL,
           {
             prompt,
             stream: true,
@@ -86,16 +91,20 @@ export async function POST(request: Request) {
           },
           {
             gateway: {
-              id: "battledecks_ai_gateway",
+              id: GATEWAY,
               skipCache: true,
             },
           }
         );
 
-        // @ts-expect-error Argument of type 'AiTextGenerationOutput' is not assignable to parameter of type 'BodyInit'
-        return new Response(result, {
-          headers: { "content-type": "text/event-stream" },
-        });
+        if (process.env.NODE_ENV === "development") {
+          return result;
+        } else {  
+          // @ts-expect-error Argument of type 'AiTextGenerationOutput' is not assignable to parameter of type 'BodyInit'
+          return new Response(result, {
+            headers: { "content-type": "text/event-stream" },
+          });
+        }
       }
 
       case "create_slide_caption": {
@@ -107,7 +116,7 @@ export async function POST(request: Request) {
         }
 
         const result = await env.AI.run(
-          "@cf/meta/llama-3.2-11b-vision-instruct",
+          VISION_MODEL,
           {
             prompt: CAPTION_PROMPT,
             image: uint8Array,
@@ -115,37 +124,45 @@ export async function POST(request: Request) {
           },
           {
             gateway: {
-              id: "battledecks_ai_gateway",
+              id: GATEWAY,
               skipCache: true,
             },
           }
         );
 
-        // @ts-expect-error Response is not typed
-        return new Response(result, {
-          headers: { "content-type": "text/event-stream" },
-        });
+        if (process.env.NODE_ENV === "development") {
+          return result;
+        } else {
+          // @ts-expect-error Response is not typed
+          return new Response(result, {
+            headers: { "content-type": "text/event-stream" },
+          });
+        }
       }
 
       case "create_slide_image": {
         const resultImage = await env.AI.run(
-          "@cf/stabilityai/stable-diffusion-xl-base-1.0",
+          IMAGE_MODEL,
           {
             prompt: IMAGE_PROMPT + body.aiPrompt,
           },
           {
             gateway: {
-              id: "battledecks_ai_gateway",
+              id: GATEWAY,
               skipCache: true,
             },
           }
         );
 
-        // @ts-expect-error Response is not typed
         // const imageBlob = new Blob([resultImage], { type: "image/png" });
-        return new Response(resultImage, {
-          headers: { "content-type": "image/png" },
-        });
+        if (process.env.NODE_ENV === "development") {
+          return resultImage;
+        } else {
+          // @ts-expect-error Response is not typed
+          return new Response(resultImage, {
+            headers: { "content-type": "image/png" },
+          });
+        }
       }
 
       default: {

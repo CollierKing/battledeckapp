@@ -379,7 +379,7 @@ export default function CreateSlideForm({
               <div className={cn("flex items-center w-24")}>
                 <Spinner
                   aria-label="Generating image..."
-                  className="h-4 w-4 text-white animate-spin mr-2"
+                  className="h-4 w-4 text-primary animate-spin mr-2"
                 />
                 <span>Generating...</span>
               </div>
@@ -394,7 +394,7 @@ export default function CreateSlideForm({
                   <div className="flex items-center space-x-1">
                     <Spinner
                       aria-label="Re-Generate prompts"
-                      className="h-4 w-4 text-white mr-2"
+                      className="h-4 w-4 text-primary mr-2"
                     />
                     <p>Re-Generate</p>
                   </div>
@@ -433,7 +433,7 @@ export default function CreateSlideForm({
                   <div className="flex items-center space-x-1">
                     <Spinner
                       aria-label="Re-Generate prompts"
-                      className="h-4 w-4 text-white mr-2"
+                      className="h-4 w-4 text-primary mr-2"
                     />
                     <p>Re-Generate</p>
                   </div>

@@ -1,19 +1,15 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import type { HTTPAIGatewayParams, HTTPAIParams } from "./ai";
 import { WorkflowParams } from "./workflow";
-
+import { AIRunResponse } from "cloudflare/resources/ai/ai.mjs";
 // Define interfaces for mock services that mirror Cloudflare's types
 export interface MockAi {
   run(
     model: string,
     params: HTTPAIParams,
     gatewayParams: HTTPAIGatewayParams
-  ): Promise<Response>;
-}
-
-export interface MockD1Database {
-  query: (query: string) => Promise<any>;
-  insert: (query: string) => Promise<any>;
-  delete: (query: string) => Promise<any>;
+  ): Promise<AIRunResponse>;
 }
 
 export interface MockR2Bucket {
@@ -35,15 +31,3 @@ export interface MockKVNamespace {
 export interface MockAnalyticsDataset {
   writeDataPoint: (data: any) => Promise<void>;
 }
-
-// Extend the global CloudflareEnv to work with both real and mock services
-declare global {
-  interface CloudflareEnv {
-    // AI: Ai | MockAi;
-    // DB: D1Database | MockD1Database;
-    R2: R2Bucket | MockR2Bucket;
-    BD_WORKFLOW: Service | MockService;
-    KV: KVNamespace | MockKVNamespace;
-    ANALYTICS: AnalyticsEngineDataset | MockAnalyticsDataset;
-  }
-} 
