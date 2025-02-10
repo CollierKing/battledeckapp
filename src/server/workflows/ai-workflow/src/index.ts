@@ -5,7 +5,7 @@ import {
   WorkerEntrypoint,
 } from "cloudflare:workers";
 import readableStreamToBlob from "./utils";
-import { CAPTION_PROMPT, IMAGE_PROMPT } from "./constants";
+import { CAPTION_PROMPT, GATEWAY, IMAGE_MODEL, IMAGE_PROMPT, VISION_MODEL } from "./constants";
 
 // MARK: - PARAMS
 type Env = {
@@ -54,27 +54,28 @@ export class BattleDecksWorkflow extends WorkflowEntrypoint<Env, Params> {
       let slide: Slide;
       let slideId: string;
       let slideImagePath: string;
+      const slideParallelLimit = 5
 
       switch (deck_type) {
         // MARK: - HUMAN
         case "human":
-          // pull next unprocessed slide from db
-          console.log("Pulling next unprocessed slide");
+          // pull next unprocessed slides from db
+          console.log("Pulling next unprocessed slides");
 
           sqlSelect = `
                         SELECT * 
                         FROM slides 
-                        WHERE deck_id = ?
+                        WHERE deck_id = ?1
                         AND wf_status = 'pending' 
-                        ORDER BY deck_order ASC LIMIT 1
+                        ORDER BY deck_order ASC LIMIT ?2
                     `;
 
-          slides = await env.DB.prepare(sqlSelect).bind(deck_id).all<Slide>();
-          console.log("Slides to process:", slides);
+          slides = await env.DB.prepare(sqlSelect).bind(deck_id, slideParallelLimit).all<Slide>();
+          console.log("Slides to process:", slides.results?.length);
 
           // if no slides, return false
           if (!slides.results || slides.results.length === 0) {
-            // Tupdate deck status to completed
+            // Update deck status to completed
             const sqlUpdate = `
                             UPDATE decks 
                             SET wf_status = 'completed' ,
@@ -90,69 +91,70 @@ export class BattleDecksWorkflow extends WorkflowEntrypoint<Env, Params> {
             return false;
           }
 
-          slide = slides.results[0];
-          slideId = slide.id;
-          slideImagePath = slide.image_url.split("/").pop() as string;
+          // Process all slides in parallel
+          await Promise.all(
+            slides.results.map(async (slide) => {
+              const slideImagePath = slide.image_url.split("/").pop() as string;
+              
+              // pull image from R2
+              console.log("Pulling image from R2:", slideImagePath);
+              const imageObject = await env.R2.get(slideImagePath);
 
-          // pull image from R2
-          console.log("Pulling image from R2:", slideImagePath);
-          const imageObject = await env.R2.get(slideImagePath);
+              if (imageObject === null) return null;
+              const fileBlob = await readableStreamToBlob(imageObject.body);
+              // Convert blob to base64
+              const arrayBuffer = await fileBlob.arrayBuffer();
+              const uint8Array = [...new Uint8Array(arrayBuffer)];
 
-          if (imageObject === null) return null;
-          const fileBlob = await readableStreamToBlob(imageObject.body);
-          // // Convert blob to base64
-          const arrayBuffer = await fileBlob.arrayBuffer();
-          const uint8Array = [...new Uint8Array(arrayBuffer)];
+              const resultCaption = await env.AI.run(
+                VISION_MODEL,
+                {
+                  prompt: CAPTION_PROMPT,
+                  image: uint8Array,
+                },
+                {
+                  gateway: {
+                    id: GATEWAY,
+                    skipCache: true,
+                  },
+                }
+              );
 
-          const resultCaption = await env.AI.run(
-            "@cf/meta/llama-3.2-11b-vision-instruct",
-            {
-              prompt: CAPTION_PROMPT,
-              image: uint8Array,
-            },
-            {
-              gateway: {
-                id: "battledecks_ai_gateway",
-                skipCache: true,
-              },
-            }
+              // @ts-expect-error Response is not typed
+              const { response: responseCaption } = resultCaption;
+              console.log("AI response for slide", slide.id, ":", responseCaption);
+
+              // save text, status to db
+              const sqlUpdate = `
+                            UPDATE slides 
+                            SET wf_status = 'completed', 
+                            caption = ?1 
+                            WHERE id = ?2
+                        `;
+
+              await env.DB.prepare(sqlUpdate).bind(responseCaption, slide.id).run();
+            })
           );
-
-          // @ts-expect-error Response is not typed
-          const { response: responseCaption } = resultCaption;
-          console.log("AI response:", responseCaption);
-
-          // save text, status to db
-          console.log("Updating caption, status for slide:", slideId);
-
-          sqlUpdate = `
-                        UPDATE slides 
-                        SET wf_status = 'completed', 
-                        caption = ?1 
-                        WHERE id = ?2
-                    `;
-
-          await env.DB.prepare(sqlUpdate).bind(responseCaption, slideId).run();
 
           return true;
 
         case "ai":
-          // pull ai prompt and next unfinished slide
-          console.log("Pulling AI prompt and next unfinished slide");
+          // pull ai prompt and next unfinished slides
+          console.log("Pulling AI prompts for next unfinished slides");
 
           sqlSelect = `
                         SELECT *
                         FROM slides 
-                        WHERE deck_id = ?
+                        WHERE deck_id = ?1
                         AND wf_status = 'pending' 
-                        ORDER BY deck_order ASC LIMIT 1
+                        ORDER BY deck_order ASC LIMIT ?2
                     `;
-          slides = await env.DB.prepare(sqlSelect).bind(deck_id).all<Slide>();
-          console.log("Slides to process:", slides);
+          slides = await env.DB.prepare(sqlSelect).bind(deck_id, slideParallelLimit).all<Slide>();
+          console.log("Slides to process:", slides.results?.length);
 
           // if no slides, return false
           if (!slides.results || slides.results.length === 0) {
-            // Tupdate deck status to completed
+            // Update deck status to completed
             sqlUpdate = `
                             UPDATE decks 
                             SET wf_status = 'completed',
@@ -168,62 +170,63 @@ export class BattleDecksWorkflow extends WorkflowEntrypoint<Env, Params> {
             return false;
           }
 
-          slide = slides.results[0];
-          slideId = slide.id;
-          const deckPrompt = slide.caption;
+          // Process all slides in parallel
+          await Promise.all(
+            slides.results.map(async (slide) => {
+              const deckPrompt = slide.caption;
 
-          // generate image from AI
-          console.log("generating image from AI");
-          const resultImage = await env.AI.run(
-            "@cf/stabilityai/stable-diffusion-xl-base-1.0",
-            {
-              prompt: IMAGE_PROMPT + deckPrompt,
-            },
-            {
-              gateway: {
-                id: "battledecks_ai_gateway",
-                skipCache: true,
-              },
-            }
+              // generate image from AI
+              console.log("generating image from AI for slide:", slide.id);
+              const resultImage = await env.AI.run(
+                IMAGE_MODEL,
+                {
+                  prompt: IMAGE_PROMPT + deckPrompt,
+                },
+                {
+                  gateway: {
+                    id: GATEWAY,
+                    skipCache: true,
+                  },
+                }
+              );
+
+              const fileName = `${slide.id}.png`;
+
+              // If it's a ReadableStream, we need to read it fully first
+              if (resultImage instanceof ReadableStream) {
+                console.log("Got a ReadableStream, converting to Blob");
+                const response = new Response(resultImage);
+                const blob = await response.blob();
+
+                await env.R2.put(fileName, blob, {
+                  httpMetadata: {
+                    contentType: "image/png",
+                  },
+                });
+              } else {
+                console.log("Got direct data, attempting direct upload");
+                await env.R2.put(fileName, resultImage, {
+                  httpMetadata: {
+                    contentType: "image/png",
+                  },
+                });
+              }
+
+              const imageUrl = `${env.CF_STORAGE_DOMAIN}/${fileName}`;
+
+              // save image path to db
+              const sqlUpdate = `
+                            UPDATE slides 
+                            SET wf_status = 'completed', 
+                            caption = ?1,
+                            image_url = ?2 
+                            WHERE id = ?3
+                        `;
+              await env.DB.prepare(sqlUpdate)
+                .bind(deckPrompt, imageUrl, slide.id)
+                .run();
+            })
           );
-
-          console.log("Result type:", typeof resultImage);
-          const fileName = `${slideId}.png`;
-
-          // If it's a ReadableStream, we need to read it fully first
-          if (resultImage instanceof ReadableStream) {
-            console.log("Got a ReadableStream, converting to Blob");
-            const response = new Response(resultImage);
-            const blob = await response.blob();
-
-            await env.R2.put(fileName, blob, {
-              httpMetadata: {
-                contentType: "image/png",
-              },
-            });
-          } else {
-            console.log("Got direct data, attempting direct upload");
-            // Handle as before
-            await env.R2.put(fileName, resultImage, {
-              httpMetadata: {
-                contentType: "image/png",
-              },
-            });
-          }
-
-          const imageUrl = `${env.CF_STORAGE_DOMAIN}/${fileName}`;
-
-          // save image path to db
-          sqlUpdate = `
-                        UPDATE slides 
-                        SET wf_status = 'completed', 
-                        caption = ?1,
-                        image_url = ?2 
-                        WHERE id = ?3
-                    `;
-          await env.DB.prepare(sqlUpdate)
-            .bind(deckPrompt, imageUrl, slideId)
-            .run();
 
           return true;
 
