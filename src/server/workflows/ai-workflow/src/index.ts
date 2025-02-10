@@ -51,9 +51,6 @@ export class BattleDecksWorkflow extends WorkflowEntrypoint<Env, Params> {
       let sqlSelect;
       let sqlUpdate;
       let slides: D1Result<Slide>;
-      let slide: Slide;
-      let slideId: string;
-      let slideImagePath: string;
       const slideParallelLimit = 5
 
       switch (deck_type) {
