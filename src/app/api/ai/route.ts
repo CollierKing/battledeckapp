@@ -141,9 +141,7 @@ export async function POST(request: Request) {
           }
         );
 
-        // @ts-expect-error Response is not typed
-        // const imageBlob = new Blob([resultImage], { type: "image/png" });
-        return new Response(resultImage, {
+        return new Response(resultImage as unknown as ReadableStream, {
           headers: { "content-type": "image/png" },
         });
       }
