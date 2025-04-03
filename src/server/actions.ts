@@ -5,7 +5,7 @@ import { AuthError } from "next-auth";
 import { TurnstileState } from "@/types/turnstile-state";
 import { headers } from "next/headers";
 import { AnalyticsState } from "@/types/analytics";
-import { getRequestContext } from "@cloudflare/next-on-pages";
+import { getEnvContext } from "@/lib/getEnvContext";
 
 async function authenticate(prevState: string | undefined, formData: FormData) {
   try {
@@ -162,7 +162,10 @@ async function writeAnalyticsData(params: {
   doubles: number[];
   indexes: string[];
 }) {
-  const { env } = await getRequestContext(); //todo: update
+  // const { env } = await getRequestContext(); //todo: update
+  const { env } = getEnvContext();
+
+  
   // console.log("writeAnalyticsData.env", env);
   env.ANALYTICS.writeDataPoint(params);
 }

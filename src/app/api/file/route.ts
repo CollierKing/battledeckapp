@@ -1,5 +1,5 @@
 import { v6 as uuidv6 } from "uuid";
-import { db } from "@/server/db";
+import initDbConnection from "@/server/db";
 import { decksTable, slidesTable } from "@/server/db/schema";
 import { chunkArray, getFileExtension } from "@/lib/utils";
 import { auth } from "@/auth";
@@ -43,6 +43,7 @@ export async function POST(request: Request) {
 
   try {
     const { env } = getEnvContext();
+    const db = initDbConnection(process.env.CLOUDFLARE_DATABASE_ID!);
     // Get the form data
     const formData = await request.formData();
 
@@ -84,7 +85,6 @@ export async function POST(request: Request) {
           // MARK: - AI Deck
 
           // Insert deck
-          // @ts-expect-error Type issue with Drizzle
           await db.insert(decksTable).values({
             id: deck_id,
             email: user.email,
@@ -170,7 +170,6 @@ export async function POST(request: Request) {
 
           if (!metadata.addSlideDeckId) {
             // Insert deck
-            // @ts-expect-error Type issue with Drizzle
             await db.insert(decksTable).values({
               id: deck_id,
               email: user.email,
@@ -226,20 +225,21 @@ export async function POST(request: Request) {
           //   }),
           // });
 
+          // TODO: IMPLEMENT
           // Binding method (RPC)
-          try {
-            // @ts-expect-error Type Property 'workflow' does not exist on type 'WorkerEntrypoint<Env, Params>'.
-            const res = await env.BD_WORKFLOW.workflow({
-              deck_id: deck_id,
-              deck_type: metadata.type,
-            });
+          // try {
+          //   // @ts-expect-error Type Property 'workflow' does not exist on type 'WorkerEntrypoint<Env, Params>'.
+          //   const res = await env.BD_WORKFLOW.workflow({
+          //     deck_id: deck_id,
+          //     deck_type: metadata.type,
+          //   });
 
-            const data = await res.json();
-            resData.workflow_id = data.id;
-          } catch (error) {
-            console.error("Workflow error:", error);
-            throw error;
-          }
+          //   const data = await res.json();
+          //   resData.workflow_id = data.id;
+          // } catch (error) {
+          //   console.error("Workflow error:", error);
+          //   throw error;
+          // }
         }
 
         resData.deck_id = deck_id;
