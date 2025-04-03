@@ -1,16 +1,16 @@
-import { drizzle } from "drizzle-orm/d1";
-import * as schema from "@/server/db/schema";
-import { getRequestContext } from "@cloudflare/next-on-pages";
+import {drizzle} from "drizzle-orm/d1";
+import * as schema from "../db/schema";
+import {HTTPD1Database} from "@/lib/mock-services";
+import {D1Database} from "@cloudflare/workers-types";
 
 export const runtime = "edge";
 
-function initDbConnection() {
-  if (process.env.NODE_ENV === "development") {
-    const { env } = getRequestContext();
-    return drizzle(env.DB, { schema });
-  }
+export default function initDbConnection(dbId: string) {
+    if (process.env.NODE_ENV === "development") {
+        return new HTTPD1Database(schema, dbId);
+    }
 
-  return drizzle(process.env.DB as unknown as D1Database, { schema });
+    return drizzle(process.env.DB as unknown as D1Database, {
+        schema
+    })
 }
-
-export const db = initDbConnection();

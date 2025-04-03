@@ -1,4 +1,4 @@
-import { db } from "@/server/db";
+import initDbConnection from "@/server/db";
 import { decksTable } from "@/server/db/schema";
 import { eq } from "drizzle-orm";
 import { auth } from "@/auth";
@@ -21,6 +21,8 @@ export const runtime = "edge";
 async function DecksWithData() {
   // Authenticate and fetch data
   const session = await auth();
+
+  const db = initDbConnection(process.env.CLOUDFLARE_DATABASE_ID!);
 
   const decks = await db
     .select()

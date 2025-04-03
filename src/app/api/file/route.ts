@@ -1,9 +1,9 @@
 import { v6 as uuidv6 } from "uuid";
 import { db } from "@/server/db";
 import { decksTable, slidesTable } from "@/server/db/schema";
-import { getRequestContext } from "@cloudflare/next-on-pages";
 import { chunkArray, getFileExtension } from "@/lib/utils";
 import { auth } from "@/auth";
+import {getEnvContext} from "@/lib/getEnvContext";
 
 export const runtime = "edge";
 
@@ -42,7 +42,7 @@ export async function POST(request: Request) {
   const { user } = session;
 
   try {
-    const { env } = getRequestContext();
+    const { env } = getEnvContext();
     // Get the form data
     const formData = await request.formData();
 

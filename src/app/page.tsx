@@ -8,7 +8,7 @@ export const runtime = "edge";
 
 export default async function Home() {
   const session = await auth();
-
+  console.log("session", session);
   return (
     <div className="flex flex-col min-h-screen items-center">
       <div className="w-full max-w-7xl mx-auto flex flex-col items-center">

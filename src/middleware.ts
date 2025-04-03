@@ -4,7 +4,24 @@ import type { NextRequest } from "next/server";
 
 // This function can be marked `async` if using `await` inside
 export async function middleware(request: NextRequest) {
-  const session = await auth();
+  let session = await auth();
+
+  // In development mode, create a mock session if none exists
+  if (process.env.NODE_ENV === "development" && !session) {
+    session = {
+      user: {
+        email: process.env.CLOUDFLARE_EMAIL || "dev@example.com",
+        name: "Development User",
+        image: "https://github.com/identicons/development.png"
+      },
+      expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+    };
+  }
+
+  // In development mode, bypass auth checks for all routes except login
+  if (process.env.NODE_ENV === "development" && !request.nextUrl.pathname.startsWith("/login")) {
+    return NextResponse.next();
+  }
 
   // If the user is not logged in and trying to access a protected route
   if (!session && !request.nextUrl.pathname.startsWith("/login")) {

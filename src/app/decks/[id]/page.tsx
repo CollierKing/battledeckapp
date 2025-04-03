@@ -1,4 +1,4 @@
-import { db } from "@/server/db";
+import initDbConnection from "@/server/db";
 import { decksTable, slidesTable } from "@/server/db/schema";
 import { eq, and } from "drizzle-orm";
 import { auth } from "@/auth";
@@ -22,6 +22,8 @@ async function SlidesWithData({ deckId }) {
 
   // Authenticate and fetch data
   const session = await auth();
+
+  const db = initDbConnection(process.env.CLOUDFLARE_DATABASE_ID!);
 
   const slides = await db
     .select({
@@ -49,7 +51,6 @@ async function SlidesWithData({ deckId }) {
     if (slides[0].deck_status === "completed") {
       await db
         .update(decksTable)
-        // @ts-expect-error Type issue with Drizzle
         .set({ wf_status: "acknowledged" })
         .where(
           and(
