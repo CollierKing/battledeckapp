@@ -50,3 +50,5 @@ battledeck_images/
 
 .idea/
 test/
+*/node_modules/*
+**/node_modules/.cache/
