@@ -162,9 +162,8 @@ async function writeAnalyticsData(params: {
   doubles: number[];
   indexes: string[];
 }) {
-  // const { env } = await getRequestContext(); //todo: update
+  
   const { env } = getEnvContext();
-
   
   // console.log("writeAnalyticsData.env", env);
   env.ANALYTICS.writeDataPoint(params);

@@ -35,6 +35,12 @@ type Slide = {
   updatedAt: string;
 };
 
+type RequestBody = {
+  instanceId?: string;
+  deck_id: string;
+  deck_type: string;
+};
+
 // MARK: - WORKFLOW
 export class BattleDecksWorkflow extends WorkflowEntrypoint<Env, Params> {
   async run(event: WorkflowEvent<Params>, step: WorkflowStep) {
@@ -250,11 +256,51 @@ export class BattleDecksWorkflow extends WorkflowEntrypoint<Env, Params> {
 
 // MARK: - WORKER (rpc method)
 export default class BattleDecksWorker extends WorkerEntrypoint<Env> {
-  // no fetching allowed
-  async fetch() {
-    return new Response(null, { status: 404 });
+  // Fetch Method
+  // async fetch() {
+  //   return new Response(null, { status: 404 });
+  // }
+
+  async fetch(req: Request): Promise<Response> {
+    // check for request type
+    if (req.method !== "POST") {
+      return Response.json({ error: "Method not allowed" }, { status: 405 });
+    }
+
+    // get headers
+    const authHeader = req.headers.get("Authorization");
+
+    // check for token vs env.CF_WORKER_TOKEN
+    if (authHeader !== this.env.CF_WORKER_TOKEN) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+
+    const { instanceId, deck_id, deck_type } =
+      (await req.json()) as RequestBody;
+
+    // Get the status of an existing instance, if provided
+    if (instanceId) {
+      const instance = await this.env.BD_WORKFLOW.get(instanceId);
+      return Response.json({
+        status: await instance.status(),
+      });
+    }
+
+    // Spawn a new instance and return the ID and status
+    const instance = await this.env.BD_WORKFLOW.create({
+      params: {
+        deck_id,
+        deck_type,
+      },
+    });
+    return Response.json({
+      id: instance.id,
+      details: await instance.status(),
+    });
   }
 
+  // RPC method
   async workflow(wfParams: {
     instanceId?: string;
     deck_id: string;
@@ -283,50 +329,3 @@ export default class BattleDecksWorker extends WorkerEntrypoint<Env> {
     });
   }
 }
-
-// interface RequestBody {
-//   instanceId?: string;
-//   deck_id: string;
-//   deck_type: string;
-// }
-
-// MARK: - WORKER (fetch method)
-// export default {
-//   async fetch(req: Request, env: Env): Promise<Response> {
-//     // check for request type
-//     if (req.method !== "POST") {
-//       return Response.json({ error: "Method not allowed" }, { status: 405 });
-//     }
-
-//     // get headers
-//     const authHeader = req.headers.get("Authorization");
-
-//     // check for token vs env.CF_WORKER_TOKEN
-//     if (authHeader !== env.CF_WORKER_TOKEN) {
-//       return Response.json({ error: "Unauthorized" }, { status: 401 });
-//     }
-
-//     const { instanceId, deck_id, deck_type } =
-//       (await req.json()) as RequestBody;
-
-//     // Get the status of an existing instance, if provided
-//     if (instanceId) {
-//       const instance = await env.BD_WORKFLOW.get(instanceId);
-//       return Response.json({
-//         status: await instance.status(),
-//       });
-//     }
-
-//     // Spawn a new instance and return the ID and status
-//     const instance = await env.BD_WORKFLOW.create({
-//       params: {
-//         deck_id,
-//         deck_type,
-//       },
-//     });
-//     return Response.json({
-//       id: instance.id,
-//       details: await instance.status(),
-//     });
-//   },
-// };

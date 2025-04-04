@@ -3,7 +3,6 @@ import {
     IMAGE_PROMPT,
 } from "@/server/workflows/ai-workflow/src/constants";
 import {auth} from "@/auth";
-import {getEnvContext} from "@/lib/getEnvContext";
 import { getRequestContext } from "@cloudflare/next-on-pages";
 
 export const runtime = "edge";
@@ -94,7 +93,7 @@ export async function POST(request: Request) {
                     }
                 );
 
-                return new Response(result, {
+                return new Response(result as ReadableStream, {
                     headers: {"content-type": "text/event-stream"},
                 });
             }
@@ -122,7 +121,7 @@ export async function POST(request: Request) {
                     }
                 );
 
-                return new Response(result, {
+                return new Response(result as ReadableStream, {
                     headers: {"content-type": "text/event-stream"},
                 });
             }

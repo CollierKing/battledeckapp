@@ -49,3 +49,4 @@ battledeck_images/
 !.env.sample
 
 .idea/
+test/

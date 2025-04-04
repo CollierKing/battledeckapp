@@ -227,19 +227,19 @@ export async function POST(request: Request) {
 
           // TODO: IMPLEMENT
           // Binding method (RPC)
-          // try {
-          //   // @ts-expect-error Type Property 'workflow' does not exist on type 'WorkerEntrypoint<Env, Params>'.
-          //   const res = await env.BD_WORKFLOW.workflow({
-          //     deck_id: deck_id,
-          //     deck_type: metadata.type,
-          //   });
+          try {
+            // @ts-expect-error Type Property 'workflow' does not exist on type 'WorkerEntrypoint<Env, Params>'.
+            const res = await env.BD_WORKFLOW.workflow({
+              deck_id: deck_id,
+              deck_type: metadata.type,
+            });
 
-          //   const data = await res.json();
-          //   resData.workflow_id = data.id;
-          // } catch (error) {
-          //   console.error("Workflow error:", error);
-          //   throw error;
-          // }
+            const data = await res.json();
+            resData.workflow_id = data.id;
+          } catch (error) {
+            console.error("Workflow error:", error);
+            throw error;
+          }
         }
 
         resData.deck_id = deck_id;

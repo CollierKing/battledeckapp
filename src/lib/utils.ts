@@ -144,6 +144,8 @@ export function findStringStart(str: string, queryStr: string): number[] {
   }
 }
 
+// TODO: this is reverting to ".bin" on single slide file uploads
+
 // Add this helper function to map MIME types to file extensions
 export function getFileExtension(mimeType: string): string {
   const mimeToExt: { [key: string]: string } = {

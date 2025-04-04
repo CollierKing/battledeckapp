@@ -1,7 +1,8 @@
 import { eq, inArray, like, or, and, exists } from "drizzle-orm";
-import { db } from "@/server/db";
+import initDbConnection from "@/server/db";
 import { decksTable, slidesTable } from "@/server/db/schema";
 import { auth } from "@/auth";
+import { getEnvContext } from "@/lib/getEnvContext";
 
 export const runtime = "edge";
 
@@ -48,19 +49,9 @@ export async function POST(request: Request) {
   const { user } = session;
 
   try {
-    
-    // Validate that we have a DB instance
-    if (!db && NODE_ENV === "production") {
-      console.error("Database instance not found in environment");
-      return new Response(
-        JSON.stringify({ error: "Database configuration error" }),
-        {
-          status: 500,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
 
+    const db = initDbConnection(process.env.CLOUDFLARE_DATABASE_ID!);
+    
     const body = (await request.json()) as RequestBody;
 
     const resData: ResponseData = {
@@ -148,7 +139,6 @@ export async function POST(request: Request) {
           if (body.deck_status === "completed") {
             await db
               .update(decksTable)
-              // @ts-expect-error Type issue with Drizzle
               .set({ wf_status: "acknowledged" })
               .where(
                 and(

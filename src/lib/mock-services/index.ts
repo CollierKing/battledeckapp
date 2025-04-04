@@ -6,7 +6,7 @@ import {
   MockR2Bucket,
   MockService,
 } from "@/interfaces/mock-services";
-import { HTTPAIParams } from "@/types/mock-services";
+import { HTTPAIParams, WorkflowParams } from "@/types/mock-services";
 
 const {
   CLOUDFLARE_ACCOUNT_ID,
@@ -212,19 +212,22 @@ export class HTTPR2Bucket implements MockR2Bucket {
     return response.json();
   }
 
-  async put(key: string, value: any): Promise<void> {
+  async put(key: string, value: any, options?: { httpMetadata: { contentType: string } }): Promise<void> {
     const response = await fetch(
       `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/r2/buckets/${CLOUDFLARE_R2_BUCKET_ID}/objects/${key}`,
-
       {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${CLOUDFLARE_R2_API_TOKEN}`,
-          "Content-Type": "application/json",
+          "Content-Type": options?.httpMetadata?.contentType || "image/webp",
         },
-        body: JSON.stringify(value),
+        body: options?.httpMetadata?.contentType ? value : JSON.stringify(value),
       }
     );
+
+    if (!response.ok) {
+      throw new Error(`Failed to upload file: ${response.statusText}`);
+    }
 
     return response.json();
   }
@@ -235,14 +238,11 @@ export class HTTPService implements MockService {
   async workflow(workflowParams: WorkflowParams): Promise<Response> {
     const response = await fetch(CF_WORKER_URL, {
       method: "POST",
-
       headers: {
         Authorization: CF_WORKER_TOKEN,
       },
-
       body: JSON.stringify({
         deck_id: workflowParams.deck_id,
-
         deck_type: workflowParams.deck_type,
       }),
     });
@@ -258,4 +258,5 @@ export const createMockEnv = () => ({
   ANALYTICS: new HTTPAnalyticsDataset(),
   KV: new HTTPKVNamespace(),
   R2: new HTTPR2Bucket(),
+  BD_WORKFLOW: new HTTPService(),
 });

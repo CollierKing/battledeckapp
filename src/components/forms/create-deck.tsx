@@ -360,7 +360,7 @@ export default function CreateDeckForm({ onOpenChange }: CreateDeckFormProps) {
                           <ChevronDown className="h-4 w-4 transition-transform duration-200" />
                         </CollapsibleTrigger>
                         <CollapsibleContent>
-                          <div className="max-h-96 overflow-y-scroll mt-2">
+                          <div className="max-h-96 overflow-y-auto mt-2">
                             {aiSlidePrompts.map((e, index) => (
                               <div
                                 key={index}

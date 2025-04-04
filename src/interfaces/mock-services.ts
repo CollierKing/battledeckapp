@@ -1,4 +1,4 @@
-import {HTTPAIGatewayParams, HTTPAIParams} from "@/types/mock-services";
+import {HTTPAIGatewayParams, HTTPAIParams, WorkflowParams} from "@/types/mock-services";
 
 export interface MockAi {
   run(

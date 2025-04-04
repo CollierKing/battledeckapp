@@ -36,8 +36,6 @@ export default function LoginPage() {
         </p>
         <div className=" mr-8">
           <div className="w-full max-w-sm space-y-4 rounded-lg p-6 bg-transparent">
-            {/* TODO: add  */}
-
             {error && (
               <div className="bg-red-100 p-3 rounded text-red-700 text-sm">
                 {error === "OAuthSignin"
