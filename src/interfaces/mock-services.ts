@@ -21,9 +21,12 @@ export interface MockAnalyticsDataset {
 export interface MockKVNamespace {
   get: (key: string) => Promise<string | null>;
   put: (key: string, value: string) => Promise<void>;
-  // Add other KV methods as needed
 }
 
 export interface MockService {
   workflow: (workflowParams: WorkflowParams) => Promise<Response>;
+}
+
+export interface MockVectorize {
+  vectorize: (image: string) => Promise<any>;
 }

@@ -1,6 +1,11 @@
 import {
     CAPTION_PROMPT,
+    GATEWAY,
+    IMAGE_MODEL,
     IMAGE_PROMPT,
+    makeDeckPrompt,
+    TEXT_MODEL,
+    VISION_MODEL,
 } from "@/server/workflows/ai-workflow/src/constants";
 import {auth} from "@/auth";
 import { getRequestContext } from "@cloudflare/next-on-pages";
@@ -61,22 +66,10 @@ export async function POST(request: Request) {
 
         switch (body.action) {
             case "create_slide_prompts": {
-                const prompt = `
-                    You are a helpful assistant that generates slide prompts for a deck of images.
-                    You will be given a prompt and a number of slides.
-                    You will generate ${body.slideCount} prompts for the slides.
-                    The prompts should be concise and descriptive for AI image generation. 
-                    Here is the prompt: ${body.aiPrompt}
-                    The response MUST BE IN the following format.
-                    prompt1
-                    \n
-                    ...
-                    No extra commentary or extra words outside of the specified format.
-                `;
+                const prompt = makeDeckPrompt(body.slideCount, body.aiPrompt);
 
                 const result = await env.AI.run(
-                    "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
-                    // "@cf/meta/llama-3.1-70b-instruct",
+                    TEXT_MODEL,
                     {
                         prompt,
                         stream: true,
@@ -87,7 +80,7 @@ export async function POST(request: Request) {
                     },
                     {
                         gateway: {
-                            id: "battledecks_ai_gateway",
+                            id: GATEWAY,
                             skipCache: true,
                         },
                     }
@@ -107,7 +100,7 @@ export async function POST(request: Request) {
                 }
 
                 const result = await env.AI.run(
-                    "@cf/meta/llama-3.2-11b-vision-instruct",
+                    VISION_MODEL,
                     {
                         prompt: CAPTION_PROMPT,
                         image: uint8Array,
@@ -115,7 +108,7 @@ export async function POST(request: Request) {
                     },
                     {
                         gateway: {
-                            id: "battledecks_ai_gateway",
+                            id: GATEWAY,
                             skipCache: true,
                         },
                     }
@@ -128,13 +121,13 @@ export async function POST(request: Request) {
 
             case "create_slide_image": {
                 const resultImage = await env.AI.run(
-                    "@cf/stabilityai/stable-diffusion-xl-base-1.0",
+                    IMAGE_MODEL,
                     {
                         prompt: IMAGE_PROMPT + body.aiPrompt,
                     },
                     {
                         gateway: {
-                            id: "battledecks_ai_gateway",
+                            id: GATEWAY,
                             skipCache: true,
                         },
                     }

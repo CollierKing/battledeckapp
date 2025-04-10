@@ -3,8 +3,8 @@ import initDbConnection from "@/server/db";
 import { decksTable, slidesTable } from "@/server/db/schema";
 import { chunkArray, getFileExtension } from "@/lib/utils";
 import { auth } from "@/auth";
-import {getEnvContext} from "@/lib/getEnvContext";
-
+import { getEnvContext } from "@/lib/getEnvContext";
+import { EMBEDDING_MODEL } from "@/server/workflows/ai-workflow/src/constants";
 export const runtime = "edge";
 
 interface ResponseData {
@@ -20,6 +20,8 @@ interface FileMetadata {
   r2_file_name?: string;
   deck_order?: number;
 }
+
+const SLIDE_CHUNK_SIZE = 10;
 
 const {
   CF_STORAGE_DOMAIN,
@@ -67,8 +69,6 @@ export async function POST(request: Request) {
       deck_id: "",
     };
 
-    const SLIDE_CHUNK_SIZE = 10;
-
     switch (metadata.action) {
       case "create_deck":
         let deck_id: string;
@@ -96,11 +96,15 @@ export async function POST(request: Request) {
             updatedAt: new Date(),
           });
 
+          // TODO: create embeddings for "name: ai_prompt"
+          // TODO: insert into vectorize DECKS index with name, id as metadata, email as namespace
+
           // Insert slides
           if (metadata.aiSlidePrompts && metadata.aiSlidePrompts.length > 0) {
             // Maximum bound parameters per query is 100.
             // https://developers.cloudflare.com/d1/platform/limits/
 
+            // TODO: this needs to assign the id upfront
             const slideChunks = chunkArray(
               metadata.aiSlidePrompts,
               SLIDE_CHUNK_SIZE
@@ -120,6 +124,8 @@ export async function POST(request: Request) {
                 }))
               );
             }
+
+            // TODO: insert into vectorize SLIDES index
           }
         } else {
           // MARK: - Human Deck
@@ -180,6 +186,24 @@ export async function POST(request: Request) {
               createdAt: new Date(),
               updatedAt: new Date(),
             });
+
+            // TODO: create embeddings for "name: ai_prompt"
+            // const result = await env.AI.run(
+            //   EMBEDDING_MODEL,
+            //   {
+            //     text: metadata.name + ": " + metadata.aiPrompt,
+            //   },
+            //   {
+            //     gateway: {
+            //       id: "battledecks_ai_gateway",
+            //       skipCache: true,
+            //     },
+            //   }
+            // );
+
+            // console.log("Deck Name Embedding: ", result);
+
+            // TODO: insert into vectorize DECKS index with name, id as metadata, email as namespace
           }
 
           const slideBatches = chunkArray(
@@ -189,21 +213,32 @@ export async function POST(request: Request) {
 
           // Insert all batches in parallel
           await Promise.all(
-            slideBatches.map((batch) =>
-              db.insert(slidesTable).values(
-                batch.map((fileInfo) => ({
-                  id: fileInfo.id,
-                  deck_id: deck_id,
-                  deck_order: fileInfo.deck_order,
-                  caption: fileInfo.caption || "",
-                  image_url: `${CF_STORAGE_DOMAIN}/${fileInfo.r2_file_name}`,
-                  wf_status: "pending",
-                  createdAt: new Date(),
-                  updatedAt: new Date(),
-                }))
-              )
+            slideBatches.map(
+              (batch) =>
+                db.insert(slidesTable).values(
+                  batch.map((fileInfo) => ({
+                    id: fileInfo.id,
+                    deck_id: deck_id,
+                    deck_order: fileInfo.deck_order,
+                    caption: fileInfo.caption || "",
+                    image_url: `${CF_STORAGE_DOMAIN}/${fileInfo.r2_file_name}`,
+                    wf_status: "pending",
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                  }))
+                )
             )
           );
+
+          // TODO: insert into vectorize SLIDES index
+          // await Promise.all(
+          //   slideBatches.map(async (batch) => {
+          //     await Promise.all(
+          //       // batch.map(async (fileInfo) => {
+                  
+          //   }
+          // )
+
         }
 
         // MARK: - Invoke Workflow

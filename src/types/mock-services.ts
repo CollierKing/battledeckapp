@@ -25,7 +25,8 @@ export type D1Response = {
 
 // MARK: -
 export type HTTPAIParams = {
-  prompt: string;
+  prompt?: string;
+  text?: string;
   image?: Uint8Array;
   stream?: boolean;
   temperature?: number;

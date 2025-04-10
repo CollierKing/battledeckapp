@@ -5,7 +5,13 @@ import {
   WorkerEntrypoint,
 } from "cloudflare:workers";
 import readableStreamToBlob from "./utils";
-import { CAPTION_PROMPT, GATEWAY, IMAGE_MODEL, IMAGE_PROMPT, VISION_MODEL } from "./constants";
+import {
+  CAPTION_PROMPT,
+  GATEWAY,
+  IMAGE_MODEL,
+  IMAGE_PROMPT,
+  VISION_MODEL,
+} from "./constants";
 
 // MARK: - PARAMS
 type Env = {
@@ -57,7 +63,7 @@ export class BattleDecksWorkflow extends WorkflowEntrypoint<Env, Params> {
       let sqlSelect;
       let sqlUpdate;
       let slides: D1Result<Slide>;
-      const slideParallelLimit = 5
+      const slideParallelLimit = 5;
 
       switch (deck_type) {
         // MARK: - HUMAN
@@ -73,7 +79,9 @@ export class BattleDecksWorkflow extends WorkflowEntrypoint<Env, Params> {
                         ORDER BY deck_order ASC LIMIT ?2
                     `;
 
-          slides = await env.DB.prepare(sqlSelect).bind(deck_id, slideParallelLimit).all<Slide>();
+          slides = await env.DB.prepare(sqlSelect)
+            .bind(deck_id, slideParallelLimit)
+            .all<Slide>();
           console.log("Slides to process:", slides.results?.length);
 
           // if no slides, return false
@@ -98,7 +106,7 @@ export class BattleDecksWorkflow extends WorkflowEntrypoint<Env, Params> {
           await Promise.all(
             slides.results.map(async (slide) => {
               const slideImagePath = slide.image_url.split("/").pop() as string;
-              
+
               // pull image from R2
               console.log("Pulling image from R2:", slideImagePath);
               const imageObject = await env.R2.get(slideImagePath);
@@ -125,7 +133,12 @@ export class BattleDecksWorkflow extends WorkflowEntrypoint<Env, Params> {
 
               // @ts-expect-error Response is not typed
               const { response: responseCaption } = resultCaption;
-              console.log("AI response for slide", slide.id, ":", responseCaption);
+              console.log(
+                "AI response for slide",
+                slide.id,
+                ":",
+                responseCaption
+              );
 
               // save text, status to db
               const sqlUpdate = `
@@ -135,7 +148,12 @@ export class BattleDecksWorkflow extends WorkflowEntrypoint<Env, Params> {
                             WHERE id = ?2
                         `;
 
-              await env.DB.prepare(sqlUpdate).bind(responseCaption, slide.id).run();
+              await env.DB.prepare(sqlUpdate)
+                .bind(responseCaption, slide.id)
+                .run();
+
+              // TODO: create embeddings for "caption"
+              // TODO: upsert into vectorize SLIDES index with id as slide id, deck_id as metadata, email as namespace
             })
           );
 
@@ -152,7 +170,9 @@ export class BattleDecksWorkflow extends WorkflowEntrypoint<Env, Params> {
                         AND wf_status = 'pending' 
                         ORDER BY deck_order ASC LIMIT ?2
                     `;
-          slides = await env.DB.prepare(sqlSelect).bind(deck_id, slideParallelLimit).all<Slide>();
+          slides = await env.DB.prepare(sqlSelect)
+            .bind(deck_id, slideParallelLimit)
+            .all<Slide>();
           console.log("Slides to process:", slides.results?.length);
 
           // if no slides, return false
@@ -160,8 +180,9 @@ export class BattleDecksWorkflow extends WorkflowEntrypoint<Env, Params> {
             // Update deck status to completed
             sqlUpdate = `
                             UPDATE decks 
-                            SET wf_status = 'completed',
-                            hero_image_url = (
+                            SET 
+                              wf_status = 'completed',
+                              hero_image_url = (
                                 SELECT image_url 
                                 FROM slides 
                                 WHERE deck_id = ?1
@@ -274,7 +295,6 @@ export default class BattleDecksWorker extends WorkerEntrypoint<Env> {
     if (authHeader !== this.env.CF_WORKER_TOKEN) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
-
 
     const { instanceId, deck_id, deck_type } =
       (await req.json()) as RequestBody;
