@@ -4,7 +4,6 @@ import { decksTable, slidesTable } from "@/server/db/schema";
 import { chunkArray, getFileExtension } from "@/lib/utils";
 import { auth } from "@/auth";
 import { getEnvContext } from "@/lib/getEnvContext";
-import { EMBEDDING_MODEL } from "@/server/workflows/ai-workflow/src/constants";
 export const runtime = "edge";
 
 interface ResponseData {

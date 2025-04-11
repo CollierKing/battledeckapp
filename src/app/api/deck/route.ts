@@ -2,7 +2,6 @@ import { eq, inArray, like, or, and, exists } from "drizzle-orm";
 import initDbConnection from "@/server/db";
 import { decksTable, slidesTable } from "@/server/db/schema";
 import { auth } from "@/auth";
-import { getEnvContext } from "@/lib/getEnvContext";
 
 export const runtime = "edge";
 
@@ -30,7 +29,6 @@ interface ResponseData {
   slides: (typeof slidesTable.$inferSelect)[];
 }
 
-const { NODE_ENV } = process.env;
 
 export async function POST(request: Request) {
   if (!request.method || request.method !== "POST") {

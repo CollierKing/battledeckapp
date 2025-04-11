@@ -8,5 +8,6 @@ declare global {
     BD_WORKFLOW: Service;
     KV: KVNamespace;
     ANALYTICS: AnalyticsEngineDataset;
+    Chat: DurableObjectNamespace;
   }
 }

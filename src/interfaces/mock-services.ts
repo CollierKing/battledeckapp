@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import {HTTPAIGatewayParams, HTTPAIParams, WorkflowParams} from "@/types/mock-services";
 
 export interface MockAi {

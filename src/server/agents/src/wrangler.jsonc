@@ -1,0 +1,26 @@
+{
+  "name": "my-chat-agent",
+  "main": "src/server.ts",
+  "compatibility_date": "2025-02-04",
+  "compatibility_flags": [
+    "nodejs_compat",
+    "nodejs_compat_populate_process_env",
+  ],
+  "assets": {
+    "directory": "public",
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "Chat",
+        "class_name": "Chat",
+      },
+    ],
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["Chat"],
+    },
+  ],
+}

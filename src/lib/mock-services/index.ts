@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { drizzle } from "drizzle-orm/sqlite-proxy";
 import {
   MockAi,
@@ -5,7 +7,7 @@ import {
   MockKVNamespace,
   MockR2Bucket,
   MockService,
-  MockVectorize,
+  // MockVectorize,
 } from "@/interfaces/mock-services";
 import { HTTPAIParams, WorkflowParams } from "@/types/mock-services";
 
@@ -253,13 +255,13 @@ export class HTTPService implements MockService {
 }
 
 // TODO: Vectorize
-export class HTTPVectorize implements MockVectorize {
-  async vectorize(image: string): Promise<any> {
-    return await fetch(CF_WORKER_URL, {
-      method: "POST",
-    });
-  }
-}
+// export class HTTPVectorize implements MockVectorize {
+//   async vectorize(image: string): Promise<any> {
+//     return await fetch(CF_WORKER_URL, {
+//       method: "POST",
+//     });
+//   }
+// }
 
 
 export const createMockEnv = () => ({
