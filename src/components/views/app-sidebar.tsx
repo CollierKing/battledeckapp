@@ -2,8 +2,10 @@
 
 import {
   BellIcon,
+  Bot,
   ChartBar,
   HomeIcon,
+  Loader2,
   LogOut,
   LucideArrowLeftFromLine,
   LucideArrowRightFromLine,
@@ -33,7 +35,7 @@ import {
   useSidebarContext,
 } from "@/components/ui/sidebar";
 import CreateDeckForm from "../forms/create-deck";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState, useRef } from "react";
 import useSWR from "swr";
 import { DialogTitle } from "@radix-ui/react-dialog";
 import NotificationsContext from "@/contexts/notifications/context";
@@ -52,6 +54,13 @@ import {
   SheetClose,
 } from "@/components/ui/sheet";
 import { MenuIcon } from "lucide-react";
+import dynamic from 'next/dynamic'
+
+// Replace the lazy import with dynamic import from Next.js
+const ChatComponent = dynamic(() => import('./chat-interface'), {
+  ssr: false, // This ensures the component only loads on client side
+  loading: () => <div className="flex h-full items-center justify-center"><Loader2 className="animate-spin" /></div>
+});
 
 // MARK: - CONSTANTS
 export function AppSidebar({ session }: { session: Session | null }) {
@@ -66,46 +75,59 @@ export function AppSidebar({ session }: { session: Session | null }) {
       path: "/",
       icon: HomeIcon,
       dialog: false,
+      chat: false,
     },
     {
       title: "Search",
       url: "#",
       icon: Search,
       dialog: true,
+      chat: false,
     },
     {
       title: "Decks",
       path: "/decks",
       icon: Presentation,
       dialog: false,
+      chat: false,
     },
     {
       title: "New Deck",
       path: "#",
       icon: PlusCircleIcon,
       dialog: true,
+      chat: false,
     },
   ]);
 
   const [bottomItems] = useState(() => {
     const items = [
       {
+        title: "Chat",
+        url: "#",
+        icon: Bot,
+        chat: true,
+      },
+      {
         title: "Notifications",
         url: "#",
         icon: BellIcon,
         dialog: true,
+        chat: false,
       },
       {
         title: "Theme",
         url: "#",
         icon: Sun,
         dialog: false,
-      },
+        chat: false,
+        },
       {
         title: "Logout",
         url: "#",
         icon: LogOut,
         dialog: true,
+        chat: false,
       },
     ];
 
@@ -116,6 +138,7 @@ export function AppSidebar({ session }: { session: Session | null }) {
         url: "/analytics",
         icon: ChartBar,
         dialog: false,
+        chat: false,
       });
     }
 
@@ -123,8 +146,13 @@ export function AppSidebar({ session }: { session: Session | null }) {
   });
 
   const [dialogStates, setDialogStates] = useState<Record<string, boolean>>({});
+  const [showChat, setShowChat] = useState<boolean>(false);
   const [hasUnHackedDecks, setHasUnHackedDecks] = useState<boolean>(false);
   const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    console.log("showChat", showChat);
+  }, [showChat]);
 
   // MARK: - Context
   const { notifications, updateNotifications } =
@@ -423,6 +451,18 @@ export function AppSidebar({ session }: { session: Session | null }) {
                                 }
                               </DialogContent>
                             </Dialog>
+                          ) : item.chat ? (
+                            <SidebarMenuButton
+                              onClick={() => setShowChat(!showChat)}
+                              tooltip={"Chat"}
+                              asChild
+                              className={cn(
+                                "absolute dark:text-white bg-white dark:invert z-50",
+                                "right-0 top-0 w-8 h-8"
+                              )}
+                            >
+                              <Bot/>
+                            </SidebarMenuButton>
                           ) : (
                             <SidebarMenuButton asChild tooltip={item.title}>
                               <a href={item.url}>
@@ -643,6 +683,22 @@ export function AppSidebar({ session }: { session: Session | null }) {
                             }
                           </DialogContent>
                         </Dialog>
+                      ) : item.chat ? (
+                        <SidebarMenuButton
+                          onClick={() => setShowChat(!showChat)}
+                          tooltip={"Chat"}
+                          asChild
+                          className={cn(
+                            "text-primary",
+                            "w-full",
+                            "cursor-pointer"
+                          )}
+                        >
+                          <div className="flex items-center gap-2">
+                            <Bot />
+                            <span>{item.title}</span>
+                          </div>
+                        </SidebarMenuButton>
                       ) : (
                         <SidebarMenuButton asChild tooltip={item.title}>
                           <a href={item.url}>
@@ -659,6 +715,47 @@ export function AppSidebar({ session }: { session: Session | null }) {
           </SidebarContent>
         </Sidebar>
       )}
+      {
+        /* Chat interface with spring-like animation */
+        <div className="relative">
+          <style jsx>{`
+            @keyframes slideIn {
+              0% { transform: translateX(100%); opacity: 0; }
+              70% { transform: translateX(-2%); opacity: 1; }
+              85% { transform: translateX(1%); opacity: 1; }
+              100% { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+              0% { transform: translateX(0); opacity: 1; }
+              100% { transform: translateX(100%); opacity: 0; }
+            }
+            .slide-in {
+              animation: slideIn 0.5s forwards;
+            }
+            .slide-out {
+              animation: slideOut 0.3s forwards;
+            }
+          `}</style>
+          <div 
+            className={`fixed right-0 top-0 bottom-0 w-[400px] sm:w-[500px] md:w-[550px] bg-background border-l border-border shadow-lg overflow-hidden ${
+              showChat ? 'slide-in' : 'slide-out'
+            } ${!showChat && 'pointer-events-none'}`}
+            aria-hidden={!showChat}
+          >
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setShowChat(false)}
+              className="absolute top-2.5 right-2 z-[100]"
+            >
+              <X className="h-6 w-6" />
+            </Button>
+            <div className="h-full">
+              <ChatComponent session={session}/>
+            </div>
+          </div>
+        </div>
+      }
     </>
   );
 }

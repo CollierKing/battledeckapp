@@ -165,3 +165,7 @@ export function getFileExtension(mimeType: string): string {
 
   return mimeToExt[mimeType] || ".bin"; // Default to .bin if MIME type is unknown
 }
+
+export const formatTime = (date: Date) => {
+  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+};

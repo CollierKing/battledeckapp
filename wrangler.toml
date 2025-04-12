@@ -31,11 +31,11 @@ service = "workflows-battledecks"
 binding = "ANALYTICS"
 dataset = "battledecks"
 
-[[durable_objects.bindings]]
-name = "Chat"
-class_name = "Chat"
-script_name = "src/server/agents/server.ts"
+# [[durable_objects.bindings]]
+# name = "Chat"
+# class_name = "Chat"
+# script_name = "src/server/agents/server.ts"
 
-[[migrations]]
-tag = "v1"
-new_classes = [ "Chat" ]
+# [[migrations]]
+# tag = "v1"
+# new_classes = [ "Chat" ]
