@@ -54,19 +54,16 @@ import {
   SheetClose,
 } from "@/components/ui/sheet";
 import { MenuIcon } from "lucide-react";
-import dynamic from 'next/dynamic'
-
-// Replace the lazy import with dynamic import from Next.js
-const ChatComponent = dynamic(() => import('./chat-interface'), {
-  ssr: false, // This ensures the component only loads on client side
-  loading: () => <div className="flex h-full items-center justify-center"><Loader2 className="animate-spin" /></div>
-});
+import React from "react";
+import { useToast } from "@/hooks/use-toast";
+import { SafeChat } from "@/components/forms/chat";
 
 // MARK: - CONSTANTS
 export function AppSidebar({ session }: { session: Session | null }) {
   // console.log("AppSidebar.session", session);
 
   const { state, toggleSidebar, isMobile } = useSidebarContext();
+  const { toast } = useToast();
 
   // MARK: - State
   const [topItems] = useState([
@@ -149,9 +146,48 @@ export function AppSidebar({ session }: { session: Session | null }) {
   const [showChat, setShowChat] = useState<boolean>(false);
   const [hasUnHackedDecks, setHasUnHackedDecks] = useState<boolean>(false);
   const [mounted, setMounted] = useState(false);
+  const [chatError, setChatError] = useState<boolean>(false);
+
+  // Global handler for unhandled errors
+  useEffect(() => {
+    const handleGlobalError = (event: ErrorEvent) => {
+      // Check if this is a network error with the ChatComponent
+      if (
+        event.message.includes('NetworkError') || 
+        event.message.includes('Failed to fetch') ||
+        (event.error && event.error.toString().includes('NetworkError'))
+      ) {
+        console.warn('Caught global network error:', event);
+        setChatError(true);
+        toast({
+          title: "Connection Error",
+          description: "Chat service could not be reached. Please try again later.",
+          variant: "destructive",
+        });
+        // Prevent the error from propagating
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    };
+
+    // Add global error handler
+    window.addEventListener('error', handleGlobalError);
+    
+    // Clean up
+    return () => {
+      window.removeEventListener('error', handleGlobalError);
+    };
+  }, [toast]);
 
   useEffect(() => {
     console.log("showChat", showChat);
+  }, [showChat]);
+
+  // Reset chat error when chat is closed
+  useEffect(() => {
+    if (!showChat) {
+      setChatError(false);
+    }
   }, [showChat]);
 
   // MARK: - Context
@@ -217,6 +253,18 @@ export function AppSidebar({ session }: { session: Session | null }) {
       setHasUnHackedDecks(true);
     }
   }, [notifications, mutate]);
+
+  // MARK: - Handlers
+  
+  // Handle chat error
+  const handleChatError = () => {
+    setChatError(true);
+    toast({
+      title: "Connection Error",
+      description: "Chat service is currently unavailable. Please try again later.",
+      variant: "destructive",
+    });
+  };
 
   // MARK: - Render
   if (!mounted) {
@@ -716,9 +764,9 @@ export function AppSidebar({ session }: { session: Session | null }) {
         </Sidebar>
       )}
       {
-        /* Chat interface with spring-like animation */
-        <div className="relative">
-          <style jsx>{`
+        showChat && (
+          <div className="relative">
+            <style jsx>{`
             @keyframes slideIn {
               0% { transform: translateX(100%); opacity: 0; }
               70% { transform: translateX(-2%); opacity: 1; }
@@ -751,11 +799,22 @@ export function AppSidebar({ session }: { session: Session | null }) {
               <X className="h-6 w-6" />
             </Button>
             <div className="h-full">
-              <ChatComponent session={session}/>
+              {chatError ? (
+                <div className="flex h-full items-center justify-center flex-col gap-4 p-6">
+                  <p className="text-destructive">Chat service is unavailable.</p>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setShowChat(false)}>
+                    Close
+                  </Button>
+                </div>
+              ) : (
+                <SafeChat session={session} onClose={() => setShowChat(false)} />
+              )}
             </div>
           </div>
         </div>
-      }
+      )}
     </>
   );
 }

@@ -5,8 +5,8 @@ import { useAgent } from "agents/react";
 import { useAgentChat } from "agents/ai-react";
 import type { Message } from "@ai-sdk/react";
 import { Session } from "next-auth";
-// import { APPROVAL } from "./shared";
-// import type { tools } from "../server/agents/tools";
+import { APPROVAL } from "./index";
+
 
 // Component imports
 import { Button } from "@/components/ui/button";
@@ -26,18 +26,15 @@ import { Avatar } from "@/components/ui/avatar";
 
 import { formatTime } from "@/lib/utils";
 
-export const APPROVAL = {
-  YES: "Yes, confirmed.",
-  NO: "No, denied.",
-} as const;
+
+const agentUrl = "http://localhost:5173";
 
 
-// List of tools that require human confirmation
-// const toolsRequiringConfirmation: (keyof typeof tools)[] = [
-//   "getWeatherInformation",
-// ];
-
-const toolsRequiringConfirmation = ["getWeatherInformation"];
+const toolsRequiringConfirmation = [
+  "getWeatherInformation",
+  "searchDatabase",
+  "searchInternet",
+];
 
 export default function Chat({ session }: { session?: Session | null }) {
   // 1. State hooks first
@@ -49,9 +46,8 @@ export default function Chat({ session }: { session?: Session | null }) {
   // 3. Initialize agent (required hooks)
   const agent = useAgent({
     agent: "chat",
-    host: "http://localhost:5173",
-    // name: "test",
-    // name: session?.user?.email,
+    host: agentUrl,
+    name: session?.user?.email,
   });
 
   const {
@@ -92,7 +88,9 @@ export default function Chat({ session }: { session?: Session | null }) {
     )
   );
 
-
+  useEffect(() => {
+    console.log("agentMessages", agentMessages);
+  }, [agentMessages]);
 
   return (
     <div className="z-40 h-full flex justify-center items-center bg-transparent overflow-hidden">
@@ -153,9 +151,9 @@ export default function Chat({ session }: { session?: Session | null }) {
                     <Bot size={24} />
                   </div>
                   <h3 className="font-semibold text-lg">
-                    {session?.user?.name 
+                    {session?.user?.name
                       ? `Welcome, ${session.user.email}`
-                      : 'Welcome to AI Chat'}
+                      : "Welcome to AI Chat"}
                   </h3>
                   <p className="text-muted-foreground text-sm">
                     Start a conversation with your AI assistant. Try asking
@@ -228,6 +226,8 @@ export default function Chat({ session }: { session?: Session | null }) {
                                       🕒
                                     </span>
                                   )}
+
+                                  {/* MARK: Text */}
                                   <p className="text-sm whitespace-pre-wrap">
                                     {part.text.replace(
                                       /^scheduled message: /,
@@ -235,6 +235,18 @@ export default function Chat({ session }: { session?: Session | null }) {
                                     )}
                                   </p>
                                 </Card>
+
+{/* TODO: this is where I was planning to show the images */}
+                                {
+                                  m.parts?.find(
+                                    (e) => e.type === "tool-invocation"
+                                  )?.toolInvocation?.toolName
+                                }
+
+                                {/* {
+                                  JSON.stringify(m?.toolInvocations)
+                                } */}
+
                                 <p
                                   className={`text-xs text-muted-foreground mt-1 ${
                                     isUser ? "text-right" : "text-left"
@@ -252,6 +264,7 @@ export default function Chat({ session }: { session?: Session | null }) {
                             const toolInvocation = part.toolInvocation;
                             const toolCallId = toolInvocation.toolCallId;
 
+                            // MARK: Tool confirmation
                             if (
                               toolsRequiringConfirmation.includes(
                                 toolInvocation.toolName
@@ -325,6 +338,15 @@ export default function Chat({ session }: { session?: Session | null }) {
                                     </TooltipProvider>
                                   </div>
                                 </Card>
+                              );
+                            } else {
+                              return (
+                                <div key={i}>
+                                  <p>
+                                    Ran tool:{" "}
+                                    <strong>{toolInvocation.toolName}</strong>
+                                  </p>
+                                </div>
                               );
                             }
                             return null;
