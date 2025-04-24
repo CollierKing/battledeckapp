@@ -4,7 +4,16 @@ import { setupDevPlatform } from "@cloudflare/next-on-pages/next-dev";
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ["storage.battledeck.app", "battledeck.app"],
+    remotePatterns: [
+      {
+        protocol: 'http',
+        hostname: '**',
+      },
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+    ],
   },
 };
 

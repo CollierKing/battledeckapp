@@ -7,7 +7,6 @@ import type { Message } from "@ai-sdk/react";
 import { Session } from "next-auth";
 import { APPROVAL } from "./index";
 
-
 // Component imports
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -25,10 +24,10 @@ import { Bug, Moon, Send, Bot, Sun, Trash2 } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 
 import { formatTime } from "@/lib/utils";
-
+import ChatConvoCard from "./chat-convo-card";
+import ChatImageResults from "./chat-image-results";
 
 const agentUrl = "http://localhost:5173";
-
 
 const toolsRequiringConfirmation = [
   "getWeatherInformation",
@@ -205,48 +204,39 @@ export default function Chat({ session }: { session?: Session | null }) {
                       <div>
                         {m.parts?.map((part, i) => {
                           if (part.type === "text") {
+                            // Try to parse as JSON first
+                            let isJson = false;
+                            let parsedJson = null;
+                            
+                            try {
+                              parsedJson = JSON.parse(part.text);
+                              isJson = true;
+                            } catch (e) {
+                              // Not JSON, will render as regular text
+                            }
+                            
                             return (
-                              // biome-ignore lint/suspicious/noArrayIndexKey: it's fine here
                               <div key={i}>
-                                <Card
-                                  className={`p-3 rounded-md bg-neutral-100 dark:bg-neutral-900 ${
-                                    isUser
-                                      ? "rounded-br-none"
-                                      : "rounded-bl-none border-assistant-border"
-                                  } ${
-                                    part.text.startsWith("scheduled message")
-                                      ? "border-accent/50"
-                                      : ""
-                                  } relative`}
-                                >
-                                  {part.text.startsWith(
-                                    "scheduled message"
-                                  ) && (
-                                    <span className="absolute -top-3 -left-2 text-base">
-                                      🕒
-                                    </span>
-                                  )}
-
-                                  {/* MARK: Text */}
-                                  <p className="text-sm whitespace-pre-wrap">
-                                    {part.text.replace(
-                                      /^scheduled message: /,
-                                      ""
-                                    )}
-                                  </p>
-                                </Card>
-
-{/* TODO: this is where I was planning to show the images */}
-                                {
-                                  m.parts?.find(
-                                    (e) => e.type === "tool-invocation"
-                                  )?.toolInvocation?.toolName
-                                }
-
-                                {/* {
-                                  JSON.stringify(m?.toolInvocations)
-                                } */}
-
+                                {isJson ? (
+                                  // Render JSON content
+                                  <div className="mt-2">
+                                    <ChatConvoCard
+                                      part={{ text: parsedJson.response }}
+                                      isUser={isUser}
+                                    />
+                                    <pre className="text-xs bg-background/80 p-2 rounded-md overflow-auto">
+                                      {/* {JSON.stringify(parsedJson, null, 2)} */}
+                                      <ChatImageResults
+                                        imageResults={{
+                                          image_urls: parsedJson.image_urls,
+                                          image_captions: parsedJson.image_captions,
+                                        }}
+                                      />
+                                    </pre>
+                                  </div>
+                                ) : (
+                                  <ChatConvoCard part={part} isUser={isUser} />
+                                )}
                                 <p
                                   className={`text-xs text-muted-foreground mt-1 ${
                                     isUser ? "text-right" : "text-left"
@@ -339,17 +329,18 @@ export default function Chat({ session }: { session?: Session | null }) {
                                   </div>
                                 </Card>
                               );
-                            } else {
-                              return (
-                                <div key={i}>
-                                  <p>
-                                    Ran tool:{" "}
-                                    <strong>{toolInvocation.toolName}</strong>
-                                  </p>
-                                </div>
-                              );
-                            }
-                            return null;
+                            } 
+                            // else {
+                            //   return (
+                            //     <div key={i}>
+                            //       <p>
+                            //         Ran tool:{" "}
+                            //         <strong>{toolInvocation.toolName}</strong>
+                            //       </p>
+                            //     </div>
+                            //   );
+                            // }
+                            // return null;
                           }
                           return null;
                         })}
