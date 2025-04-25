@@ -45,17 +45,17 @@ export const SafeChat = ({
     });
   };
 
-  useEffect(() => {
-    // Check if the chat service is available
-    fetch('http://localhost:5173/api/health', { 
-      method: 'HEAD',
-      signal: AbortSignal.timeout(2000) // Timeout after 2 seconds
-    })
-    .catch(err => {
-      console.warn('Chat service health check failed:', err);
-      setInternalError(true);
-    });
-  }, []);
+  // useEffect(() => {
+  //   // Check if the chat service is available
+  //   fetch('http://localhost:5173/api/health', { 
+  //     method: 'HEAD',
+  //     signal: AbortSignal.timeout(2000) // Timeout after 2 seconds
+  //   })
+  //   .catch(err => {
+  //     console.warn('Chat service health check failed:', err);
+  //     setInternalError(true);
+  //   });
+  // }, []);
 
   const handleClose = () => {
     if (onClose) {
@@ -90,7 +90,7 @@ export const SafeChat = ({
       }
       onError={handleChatError}
     >
-      <ChatComponent session={session}/>
+      <ChatComponent session={session} onClose={onClose}/>
     </ChatErrorBoundary>
   );
 };

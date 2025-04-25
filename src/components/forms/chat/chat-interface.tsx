@@ -20,7 +20,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 
 // Icon imports
-import { Bug, Moon, Send, Bot, Sun, Trash2 } from "lucide-react";
+import { Bug, Moon, Send, Bot, Sun, Trash2, X } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 
 import { formatTime } from "@/lib/utils";
@@ -35,14 +35,14 @@ const toolsRequiringConfirmation = [
   "searchInternet",
 ];
 
-export default function Chat({ session }: { session?: Session | null }) {
-  // 1. State hooks first
+export default function Chat({ session, onClose }: { session?: Session | null, onClose?: () => void }) {
+  // MARK: - State
   const [showDebug, setShowDebug] = useState(false);
 
-  // 2. Refs next
+  // MARK: - Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // 3. Initialize agent (required hooks)
+  // MARK: - Initialize Agent
   const agent = useAgent({
     agent: "chat",
     host: agentUrl,
@@ -61,12 +61,22 @@ export default function Chat({ session }: { session?: Session | null }) {
     maxSteps: 5,
   });
 
-  // 4. Callbacks
+  // MARK: - Callbacks
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
 
-  // 5. Effects
+  // MARK: - Derived Values
+  const pendingToolCallConfirmation = agentMessages.some((m: Message) =>
+    m.parts?.some(
+      (part) =>
+        part.type === "tool-invocation" &&
+        part.toolInvocation.state === "call" &&
+        toolsRequiringConfirmation.includes(part.toolInvocation.toolName)
+    )
+  );
+
+  // MARK: - Effects
   useEffect(() => {
     scrollToBottom();
   }, [scrollToBottom]);
@@ -77,24 +87,15 @@ export default function Chat({ session }: { session?: Session | null }) {
     }
   }, [agentMessages, scrollToBottom]);
 
-  // 6. Regular functions and derived values
-  const pendingToolCallConfirmation = agentMessages.some((m: Message) =>
-    m.parts?.some(
-      (part) =>
-        part.type === "tool-invocation" &&
-        part.toolInvocation.state === "call" &&
-        toolsRequiringConfirmation.includes(part.toolInvocation.toolName)
-    )
-  );
-
   useEffect(() => {
     console.log("agentMessages", agentMessages);
   }, [agentMessages]);
 
+  // MARK: - Render
   return (
-    <div className="z-40 h-full flex justify-center items-center bg-transparent overflow-hidden">
+    <div className="absolute inset-0 z-[9999] h-full w-full flex justify-center items-center bg-background/100 border overflow-hidden">
       <div className="w-full h-full flex flex-col overflow-hidden relative">
-        <div className="w-full px-4 py-3 border-b border-neutral-300 dark:border-neutral-800 flex items-center gap-3 sticky top-0 z-10">
+        <div className="w-full px-4 py-3 border-b border-neutral-300 dark:border-neutral-800 flex items-center gap-3 sticky top-0 z-10 bg-background">
           <div className="flex items-center justify-center h-8 w-8">
             <svg
               width="28px"
@@ -117,7 +118,7 @@ export default function Chat({ session }: { session?: Session | null }) {
             <h2 className="font-semibold text-base">AI Chat Agent</h2>
           </div>
 
-          <div className="flex items-center gap-2 right-10 absolute">
+          <div className="flex items-center gap-2 right-12 absolute">
             <div className="flex items-center gap-2">
               <Bug size={16} />
               <Switch
@@ -140,7 +141,7 @@ export default function Chat({ session }: { session?: Session | null }) {
           </div>
         </div>
 
-        {/* Messages */}
+        {/* MARK: - Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-24">
           {agentMessages.length === 0 && (
             <div className="h-full flex items-center justify-center">
@@ -207,14 +208,14 @@ export default function Chat({ session }: { session?: Session | null }) {
                             // Try to parse as JSON first
                             let isJson = false;
                             let parsedJson = null;
-                            
+
                             try {
                               parsedJson = JSON.parse(part.text);
                               isJson = true;
                             } catch (e) {
                               // Not JSON, will render as regular text
                             }
-                            
+
                             return (
                               <div key={i}>
                                 {isJson ? (
@@ -229,7 +230,8 @@ export default function Chat({ session }: { session?: Session | null }) {
                                       <ChatImageResults
                                         imageResults={{
                                           image_urls: parsedJson.image_urls,
-                                          image_captions: parsedJson.image_captions,
+                                          image_captions:
+                                            parsedJson.image_captions,
                                         }}
                                       />
                                     </pre>
@@ -329,7 +331,7 @@ export default function Chat({ session }: { session?: Session | null }) {
                                   </div>
                                 </Card>
                               );
-                            } 
+                            }
                             // else {
                             //   return (
                             //     <div key={i}>
@@ -354,7 +356,7 @@ export default function Chat({ session }: { session?: Session | null }) {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input Area */}
+        {/* MARK: - Input Area */}
         <form
           onSubmit={(e) =>
             handleAgentSubmit(e, {

@@ -785,18 +785,18 @@ export function AppSidebar({ session }: { session: Session | null }) {
             }
           `}</style>
           <div 
-            className={`fixed right-0 top-0 bottom-0 w-[400px] sm:w-[500px] md:w-[550px] bg-background border-l border-border shadow-lg overflow-hidden ${
+            className={`fixed right-0 top-0 bottom-0 w-[400px] sm:w-[500px] md:w-[550px] bg-background border-l border-border shadow-lg overflow-hidden z-[99999] ${
               showChat ? 'slide-in' : 'slide-out'
             } ${!showChat && 'pointer-events-none'}`}
             aria-hidden={!showChat}
           >
             <Button 
-              variant="ghost" 
+              variant="ghost"
               size="icon" 
               onClick={() => setShowChat(false)}
-              className="absolute top-2.5 right-2 z-[100]"
+              className="fixed top-3 right-2 z-[999999] bg-white/60 backdrop-blur-sm dark:bg-black/60 hover:bg-white/80 dark:hover:bg-black/80 rounded-full shadow-sm"
             >
-              <X className="h-6 w-6" />
+              <X className="h-5 w-5" />
             </Button>
             <div className="h-full">
               {chatError ? (

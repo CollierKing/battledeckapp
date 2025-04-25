@@ -47,7 +47,7 @@ export default function DecksPage() {
   ];
   return (
     <section>
-      <div className="py-4 w-full h-10 pl-4 fixed top-0 z-50 bg-background">
+      <div className="py-4 w-full h-10 pl-4 fixed top-0 z-40 bg-background">
         <Breadcrumb>
           <BreadcrumbList>
             {breadcrumbs.map((item, index) => (
