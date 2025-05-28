@@ -8,6 +8,8 @@ A NextJS App that uses the [Cloudflare Develper Platform](https://developers.clo
 
 Made for the [Austin JavaScript Meetup](https://austinjavascript.com/).
 
+# Slides
+
 Slides for the presentation can be found [here](https://docs.google.com/presentation/d/1ZNVXzT5b_ak9GMqsGRG_AnOSY-6MGyJya-5spEBI6SA/edit?usp=sharing).
 
 # Getting Started
