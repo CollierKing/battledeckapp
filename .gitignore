@@ -49,3 +49,6 @@ battledeck_images/
 !.env.sample
 
 .idea/
+
+dev/
+.claude/
